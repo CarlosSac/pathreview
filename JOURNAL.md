@@ -17,3 +17,19 @@ Right now the codebase only tests parsers in isolation. There's no test that che
 **Setup confirmation:** [x] App runs locally at localhost:5173
 
 **Cohort ledger:** [x] Issue added to cohort ledger
+
+Add this section below your Week 7 entry in JOURNAL.md. Do not replace your previous entry!
+
+## Week 8 — Reproduction & solution planning
+
+**Reproduction commit link:** https://github.com/CarlosSac/pathreview/commit/606b10e22808fe0f1049ae241f6223e0f428f270
+
+**Reproduction summary:**
+I ran ingest_resume() with a mocked db_session, the same way the existing unit tests mock it, and it reported skipped=True, chunk_count=0 on a brand new profile that had never been ingested before. Nothing was actually parsed, chunked, or embedded. I traced this to \_check_skip() in pipeline.py, which queries db_session.query("IngestedSource") using a string instead of the actual model class, so a mocked session always returns a truthy result and the pipeline thinks a match already exists.
+
+**PLAN.md link:** https://github.com/CarlosSac/pathreview/blob/test/18-ingestion-pipeline-integration/PLAN.md
+
+**Walkthrough video (recommended):** Not recorded this week.
+
+**Blockers or open questions:**
+Still deciding whether to work around the `_check_skip()` bug by configuring the mock explicitly in the test, or fix it directly in `pipeline.py`. Leaning toward the workaround, since it keeps this PR scoped to adding a test rather than fixing an unrelated pipeline bug, but open to feedback on that call before I start Week 9.
