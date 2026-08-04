@@ -22,7 +22,7 @@ Add this section below your Week 7 entry in JOURNAL.md. Do not replace your prev
 
 ## Week 8 — Reproduction & solution planning
 
-**Reproduction commit link:** https://github.com/CarlosSac/pathreview/commit/606b10e22808fe0f1049ae241f6223e0f428f270
+**Reproduction commit link:** https://github.com/CarlosSac/pathreview/commit/60d20d18121fa7bb694da07d8692905075ede5a7
 
 **Reproduction summary:**
 I ran ingest_resume() with a mocked db_session, the same way the existing unit tests mock it, and it reported skipped=True, chunk_count=0 on a brand new profile that had never been ingested before. Nothing was actually parsed, chunked, or embedded. I traced this to \_check_skip() in pipeline.py, which queries db_session.query("IngestedSource") using a string instead of the actual model class, so a mocked session always returns a truthy result and the pipeline thinks a match already exists.
@@ -33,3 +33,39 @@ I ran ingest_resume() with a mocked db_session, the same way the existing unit t
 
 **Blockers or open questions:**
 Still deciding whether to work around the `_check_skip()` bug by configuring the mock explicitly in the test, or fix it directly in `pipeline.py`. Leaning toward the workaround, since it keeps this PR scoped to adding a test rather than fixing an unrelated pipeline bug, but open to feedback on that call before I start Week 9.
+
+## Week 9 — Solution building & PR submission
+
+### Check-in 1 (mid-week)
+
+**Current progress:**
+3 of 5 tasks from PLAN.md are done. I fixed the mock setup so the test gets past the pipeline bug and actually passes now. I added a check that embeddings really get stored, not just chunked. I also added a second sample resume (one with no work experience section) and a test for it.
+
+**Next steps:**
+Add a test for the "skip if already ingested" case, and then clean up the test file and make sure everything passes before opening a PR.
+
+**Blockers:**
+None right now.
+
+---
+
+### Check-in 2 (end of week)
+
+**PR link:** [link to your submitted pull request]
+
+**Branch:** [the branch name you worked on, e.g. `fix/123-short-description`]
+
+**What you built:**
+[1–3 sentences summarizing what your fix does and how it works]
+
+**Tests added or updated:**
+[Which test files did you touch? What do they cover?]
+
+**Self-review confirmation:** [ ] make check passes [ ] make test-unit passes
+
+**Draft PR feedback received from:** [name or Slack handle, or "none"]
+
+3 of 5 tasks from PLAN.md are done. I configured the mocked `db_session` in the test so it gets past the `_check_skip()` bug without touching `pipeline.py` (sub-task 1), which turned the Week 8 reproduction test into a real passing test. I added an assertion that `vector_db.add` is actually called once per chunk, proving embeddings are stored, not just that chunking happened (sub-task 2). I also added a second fixture resume with no work experience section, mirroring the existing case in `test_resume_parser.py`, plus a test confirming the pipeline still produces chunks for it (sub-task 3).
+
+**Next steps:**
+Sub-task 4: add a test for the skip path itself, ingesting the same resume twice and asserting the second call reports `skipped=True`, since the workaround from sub-task 1 otherwise means that behavior is never tested by anything. Then sub-task 5: clean up the test file's docstring/naming now that it's the real test suite, not just a reproduction, and confirm the full suite passes green before opening a PR.
