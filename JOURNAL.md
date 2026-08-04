@@ -51,19 +51,20 @@ None right now.
 
 ### Check-in 2 (end of week)
 
-**PR link:** [link to your submitted pull request]
+**PR link:** https://github.com/ascherj/pathreview/pull/810
 
-**Branch:** [the branch name you worked on, e.g. `fix/123-short-description`]
+**Branch:** `test/18-ingestion-pipeline-integration`
 
 **What you built:**
-[1–3 sentences summarizing what your fix does and how it works]
+An end-to-end integration test suite for the resume ingestion pipeline (parse, chunk, embed, store), using sample resume fixtures. Along the way I found and documented a real bug in the pipeline's already-ingested check, and worked around it in the tests rather than fixing the pipeline itself, since that's out of scope for this issue.
 
 **Tests added or updated:**
-[Which test files did you touch? What do they cover?]
+Added `tests/integration/test_ingestion_pipeline.py` with 3 tests: the full ingestion flow on a normal resume, the same flow on a resume with no work experience section, and the already-ingested skip path. Added two fixtures in `tests/fixtures/sample_resumes/` (`resume.txt`, `resume_no_experience.txt`).
 
-**Self-review confirmation:** [ ] make check passes [ ] make test-unit passes
+**Self-review confirmation:** [x] make check passes [x] make test-unit passes
+(Both have pre-existing failures/errors unrelated to this change, documented in the PR's Notes for Reviewers. Confirmed via `git diff --stat main...HEAD` that none of the affected files were touched here, and verified under a clean Python 3.11 environment per SETUP.md.)
 
-**Draft PR feedback received from:** [name or Slack handle, or "none"]
+**Draft PR feedback received from:** none
 
 3 of 5 tasks from PLAN.md are done. I configured the mocked `db_session` in the test so it gets past the `_check_skip()` bug without touching `pipeline.py` (sub-task 1), which turned the Week 8 reproduction test into a real passing test. I added an assertion that `vector_db.add` is actually called once per chunk, proving embeddings are stored, not just that chunking happened (sub-task 2). I also added a second fixture resume with no work experience section, mirroring the existing case in `test_resume_parser.py`, plus a test confirming the pipeline still produces chunks for it (sub-task 3).
 
