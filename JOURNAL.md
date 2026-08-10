@@ -66,7 +66,33 @@ Added `tests/integration/test_ingestion_pipeline.py` with 3 tests: the full inge
 
 **Draft PR feedback received from:** none
 
-3 of 5 tasks from PLAN.md are done. I configured the mocked `db_session` in the test so it gets past the `_check_skip()` bug without touching `pipeline.py` (sub-task 1), which turned the Week 8 reproduction test into a real passing test. I added an assertion that `vector_db.add` is actually called once per chunk, proving embeddings are stored, not just that chunking happened (sub-task 2). I also added a second fixture resume with no work experience section, mirroring the existing case in `test_resume_parser.py`, plus a test confirming the pipeline still produces chunks for it (sub-task 3).
+## Week 10 — Iteration & reflection
 
-**Next steps:**
-Sub-task 4: add a test for the skip path itself, ingesting the same resume twice and asserting the second call reports `skipped=True`, since the workaround from sub-task 1 otherwise means that behavior is never tested by anything. Then sub-task 5: clean up the test file's docstring/naming now that it's the real test suite, not just a reproduction, and confirm the full suite passes green before opening a PR.
+### Reviewer feedback
+
+**Feedback received:** [x] Yes [ ] No — still awaiting review
+
+**Summary of feedback:**
+Technically I did receive feedback but it wasn't a human review. GitHub's Copilot left an automated review, the review said that it is "🟢 Ready to approve," and noted that the changes are additive (tests, fixtures, a small pre-commit config tweak) and align with the pipeline's current behavior, including the mocked `db_session` skip-check, without touching risky production code. That automated review doesn't count toward the repo's actual merge requirement, so I'm still waiting on a real reviewer.
+
+**How you responded:**
+No changes were needed in response, Copilot's note matched what I already documented in the PR's Notes for Reviewers section, so it confirmed rather than changed anything.
+
+---
+
+### Reflection
+
+**What was harder than you expected?**
+Issue #18 was framed as a testing gap, not a bug, so I expected Week 8's "reproduce the issue" step to just build understanding of the codebase, not to hunt for a real defect. But when I ran `IngestionPipeline.ingest_resume()` locally with a mocked `db_session`, it reported `skipped=True` for a resume that had never been ingested before. Tracking that down took longer than writing the actual test assertions: `_check_skip()` was querying `db_session.query("IngestedSource")` with a string instead of the model class, and the mock's default truthy return value made the pipeline silently skip ingestion instead of raising any error. On top of that, `make typecheck` kept crashing on me until I figured out I had the wrong Python version installed, not a problem with my code.
+
+**What did you learn about working in a large codebase?**
+The biggest adjustment was realizing how much of my "did I break anything" story had to be proven, not assumed. `make test-unit` had 53 pre-existing failures and `make lint` had 182 pre-existing errors before I touched anything, and I had to explicitly diff my branch against `main` to prove none of those were mine before I could honestly check the self-review boxes. In a solo project I'd never have needed that. I also learned that conventions documented in `CONTRIBUTING.md` (commit message scopes, branch naming) aren't optional style points, they're something a reviewer or grader will actually check, to the point that I ended up rewriting my own commit history to add missing scopes before opening the PR.
+
+**How did AI tools help — and where did they fall short?**
+AI assistance was most useful for tracing execution paths quickly, e.g. confirming exactly how `BatchEmbeddingProcessor._store_embedding()` calls `vector_db.add()` so my assertions were grounded in the real API instead of a guess, and for diagnosing the mypy/numpy crash by actually running commands and comparing environments rather than speculating. It fell short on the judgment calls that were actually mine to make: whether to fix `_check_skip()` or work around it in tests, whether it was safe to rewrite already-pushed git history, and whether to open the PR as a draft or go straight to ready-for-review given I was already past the intended timeline. Those needed context about my actual constraints, not just technical correctness.
+
+**What would you do differently if you started over?**
+I'd run `make check` and `make test-unit` on a clean checkout in Week 7, before writing any code, to get the pre-existing-failure baseline up front instead of discovering it while trying to finish Week 9. I'd also open the PR as a draft earlier in the week to actually get human feedback, instead of ending up choosing ready-for-review mainly because I was behind schedule.
+
+**What are you most proud of from this module?**
+Finding the `_check_skip()` bug wasn't something the issue asked for, I found it by actually running the pipeline instead of just writing tests against my assumptions of how it should behave. I'm proud that instead of quietly working around it or quietly fixing it, I documented it clearly in PLAN.md, the PR description, and JOURNAL.md, and made a deliberate, explained scope decision to leave it for someone else to pick up as its own issue.
